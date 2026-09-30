@@ -10,7 +10,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/import")
-@CrossOrigin(origins = "http://localhost:5173")
 public class ExcelImportController {
 
     private final ExcelImportService excelImportService;

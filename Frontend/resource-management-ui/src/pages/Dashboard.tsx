@@ -10,6 +10,10 @@ import {
     Database,
 } from "lucide-react";
 
+import type {
+    LucideIcon,
+} from "lucide-react";
+
 import {
     getResources,
 } from "../services/resourceService";
@@ -18,11 +22,13 @@ import type {
     Resource,
 } from "../services/resourceService";
 
+
 interface Stat {
     title: string;
     value: string | number;
-    icon: React.ElementType;
+    icon: LucideIcon;
 }
+
 
 function Dashboard() {
 
@@ -34,6 +40,7 @@ function Dashboard() {
 
     const [error, setError] =
         useState<string>("");
+
 
     useEffect(() => {
 
@@ -47,17 +54,28 @@ function Dashboard() {
                 const data =
                     await getResources();
 
-                setResources(data);
+                console.log(
+                    "Dashboard resource data:",
+                    data
+                );
+
+                setResources(
+                    Array.isArray(data)
+                        ? data
+                        : []
+                );
 
             } catch (err) {
 
                 console.error(
-                    "Failed to load resources",
+                    "Failed to load resources:",
                     err
                 );
 
+                setResources([]);
+
                 setError(
-                    "Unable to load resource data."
+                    "Unable to load resource data. Please make sure the backend is running."
                 );
 
             } finally {
@@ -67,38 +85,63 @@ function Dashboard() {
             }
         };
 
+
         loadResources();
 
     }, []);
 
+
+    /*
+     * UNIQUE EMPLOYEES
+     *
+     * Multiple rows can belong to the same employee,
+     * so we count unique Employee Codes.
+     */
     const uniqueEmployees =
         new Set(
             resources
                 .map(
                     (resource) =>
-                        resource.employeeCode
+                        resource.employeeCode?.trim()
                 )
                 .filter(Boolean)
         ).size;
 
+
+    /*
+     * UNIQUE PROJECTS
+     *
+     * Multiple resource rows can belong to
+     * the same project.
+     */
     const uniqueProjects =
         new Set(
             resources
                 .map(
                     (resource) =>
-                        resource.projectCode
+                        resource.projectCode?.trim()
                 )
                 .filter(Boolean)
         ).size;
 
+
+    /*
+     * TOTAL FTE
+     */
     const totalFte =
         resources.reduce(
             (sum, resource) =>
                 sum +
-                Number(resource.fte ?? 0),
+                Number(
+                    resource.fte ?? 0
+                ),
             0
         );
 
+
+    /*
+     * DASHBOARD STATISTICS
+     */
     const stats: Stat[] = [
 
         {
@@ -127,30 +170,51 @@ function Dashboard() {
 
     ];
 
+
+    /*
+     * RECENT RESOURCES
+     *
+     * Show the first 8 records returned by the API.
+     */
+    const recentResources =
+        resources.slice(0, 8);
+
+
     return (
+
         <div>
+
+            {/* =========================
+                DASHBOARD STATISTICS
+               ========================= */}
 
             <div className="stats-grid">
 
                 {stats.map((stat) => {
 
-                    const Icon = stat.icon;
+                    const Icon =
+                        stat.icon;
 
                     return (
+
                         <div
                             className="stat-card"
                             key={stat.title}
                         >
 
                             <div className="stat-icon">
+
                                 <Icon size={22} />
+
                             </div>
+
 
                             <div>
 
                                 <div className="stat-title">
                                     {stat.title}
                                 </div>
+
 
                                 <div className="stat-value">
 
@@ -163,16 +227,32 @@ function Dashboard() {
                             </div>
 
                         </div>
+
                     );
+
                 })}
 
             </div>
 
+
+            {/* =========================
+                ERROR MESSAGE
+               ========================= */}
+
             {error && (
+
                 <div className="error-message">
+
                     {error}
+
                 </div>
+
             )}
+
+
+            {/* =========================
+                RECENT RESOURCES
+               ========================= */}
 
             <div className="dashboard-grid">
 
@@ -193,6 +273,7 @@ function Dashboard() {
                         </div>
 
                     </div>
+
 
                     <div className="table-container">
 
@@ -226,48 +307,87 @@ function Dashboard() {
 
                             </thead>
 
+
                             <tbody>
 
-                                {resources
-                                    .slice(0, 8)
-                                    .map(
+                                {/* LOADING */}
+
+                                {loading && (
+
+                                    <tr>
+
+                                        <td
+                                            colSpan={5}
+                                            className="empty-state"
+                                        >
+                                            Loading resource data...
+                                        </td>
+
+                                    </tr>
+
+                                )}
+
+
+                                {/* DATA */}
+
+                                {!loading &&
+                                    recentResources.map(
                                         (resource) => (
 
                                             <tr
                                                 key={
-                                                    resource.id
+                                                    resource.id ??
+                                                    `${resource.employeeCode}-${resource.projectCode}-${resource.employeeName}`
                                                 }
                                             >
 
                                                 <td>
+
                                                     {
-                                                        resource.employeeCode
+                                                        resource.employeeCode ||
+                                                        "-"
                                                     }
+
                                                 </td>
+
 
                                                 <td className="font-medium">
+
                                                     {
-                                                        resource.employeeName
+                                                        resource.employeeName ||
+                                                        "-"
                                                     }
+
                                                 </td>
 
-                                                <td>
-                                                    {
-                                                        resource.projectCode
-                                                    }
-                                                </td>
 
                                                 <td>
+
                                                     {
-                                                        resource.projectName
+                                                        resource.projectCode ||
+                                                        "-"
                                                     }
+
                                                 </td>
 
+
                                                 <td>
+
+                                                    {
+                                                        resource.projectName ||
+                                                        "-"
+                                                    }
+
+                                                </td>
+
+
+                                                <td>
+
                                                     {
                                                         resource.allocation ??
                                                         "-"
                                                     }
+
                                                 </td>
 
                                             </tr>
@@ -275,8 +395,13 @@ function Dashboard() {
                                         )
                                     )}
 
+
+                                {/* NO DATA */}
+
                                 {!loading &&
+                                    !error &&
                                     resources.length === 0 && (
+
                                         <tr>
 
                                             <td
@@ -287,6 +412,7 @@ function Dashboard() {
                                             </td>
 
                                         </tr>
+
                                     )}
 
                             </tbody>
@@ -300,7 +426,10 @@ function Dashboard() {
             </div>
 
         </div>
+
     );
+
 }
+
 
 export default Dashboard;
