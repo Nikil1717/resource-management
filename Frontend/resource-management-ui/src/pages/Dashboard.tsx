@@ -6,8 +6,6 @@ import {
 import {
     Users,
     FolderKanban,
-    BriefcaseBusiness,
-    Database,
 } from "lucide-react";
 
 import type {
@@ -93,9 +91,6 @@ function Dashboard() {
 
     /*
      * UNIQUE EMPLOYEES
-     *
-     * Multiple rows can belong to the same employee,
-     * so we count unique Employee Codes.
      */
     const uniqueEmployees =
         new Set(
@@ -110,9 +105,6 @@ function Dashboard() {
 
     /*
      * UNIQUE PROJECTS
-     *
-     * Multiple resource rows can belong to
-     * the same project.
      */
     const uniqueProjects =
         new Set(
@@ -123,20 +115,6 @@ function Dashboard() {
                 )
                 .filter(Boolean)
         ).size;
-
-
-    /*
-     * TOTAL FTE
-     */
-    const totalFte =
-        resources.reduce(
-            (sum, resource) =>
-                sum +
-                Number(
-                    resource.fte ?? 0
-                ),
-            0
-        );
 
 
     /*
@@ -156,25 +134,11 @@ function Dashboard() {
             icon: FolderKanban,
         },
 
-        {
-            title: "Total FTE",
-            value: totalFte.toFixed(2),
-            icon: BriefcaseBusiness,
-        },
-
-        {
-            title: "Records",
-            value: resources.length,
-            icon: Database,
-        },
-
     ];
 
 
     /*
      * RECENT RESOURCES
-     *
-     * Show the first 8 records returned by the API.
      */
     const recentResources =
         resources.slice(0, 8);
@@ -342,52 +306,42 @@ function Dashboard() {
                                             >
 
                                                 <td>
-
                                                     {
                                                         resource.employeeCode ||
                                                         "-"
                                                     }
-
                                                 </td>
 
 
                                                 <td className="font-medium">
-
                                                     {
                                                         resource.employeeName ||
                                                         "-"
                                                     }
-
                                                 </td>
 
 
                                                 <td>
-
                                                     {
                                                         resource.projectCode ||
                                                         "-"
                                                     }
-
                                                 </td>
 
 
                                                 <td>
-
                                                     {
                                                         resource.projectName ||
                                                         "-"
                                                     }
-
                                                 </td>
 
 
                                                 <td>
-
                                                     {
                                                         resource.allocation ??
                                                         "-"
                                                     }
-
                                                 </td>
 
                                             </tr>
