@@ -202,7 +202,15 @@ function Projects() {
     const handleAddResource =
         (project: Project): void => {
 
-            setSelectedProject(project);
+            setSelectedProject({
+                ...project,
+                customerCode: project.customerCode,
+                customerName: project.customerName,
+                projectDUName: project.projectDUName,
+                projectManagerName: project.projectManagerName,
+                projectCategory: project.projectCategory,
+                projectCategoryName: project.projectCategoryName,
+            });
             setEditingResource(null);
             setShowResourceModal(true);
 
