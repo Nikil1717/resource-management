@@ -6,6 +6,7 @@ import {
 import {
     Users,
     FolderKanban,
+    Building2,
 } from "lucide-react";
 
 import type {
@@ -116,6 +117,23 @@ function Dashboard() {
                 .filter(Boolean)
         ).size;
 
+    /*
+     * UNIQUE CUSTOMERS
+     */
+    const uniqueCustomers =
+        new Set(
+            resources
+                .map((resource) => {
+                    const customerCode =
+                        resource.customerCode?.trim().toLocaleLowerCase();
+                    const customerName =
+                        resource.customerName?.trim().toLocaleLowerCase();
+
+                    return customerCode || customerName;
+                })
+                .filter(Boolean)
+        ).size;
+
 
     /*
      * DASHBOARD STATISTICS
@@ -132,6 +150,12 @@ function Dashboard() {
             title: "Active Projects",
             value: uniqueProjects,
             icon: FolderKanban,
+        },
+
+        {
+            title: "Total Customers",
+            value: uniqueCustomers,
+            icon: Building2,
         },
 
     ];

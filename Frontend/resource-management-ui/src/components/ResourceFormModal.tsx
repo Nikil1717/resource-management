@@ -1,5 +1,6 @@
 import {
     useEffect,
+    useMemo,
     useState,
 } from "react";
 
@@ -9,6 +10,7 @@ import {
 
 import {
     createResource,
+    getResources,
     updateResource,
 } from "../services/resourceService";
 
@@ -22,6 +24,12 @@ interface ResourceFormModalProps {
     defaultProject?: {
         projectCode: string;
         projectName: string;
+        customerCode?: string;
+        customerName?: string;
+        projectDUName?: string;
+        projectManagerName?: string;
+        projectCategory?: string;
+        projectCategoryName?: string;
     };
     onClose: () => void;
     onSaved: () => void;
@@ -66,6 +74,56 @@ function ResourceFormModal({
     const [error, setError] =
         useState<string>("");
 
+    const [allResources, setAllResources] =
+        useState<Resource[]>([]);
+
+    const [selectedBand, setSelectedBand] =
+        useState<string>(formData.band || "");
+
+    const bandOptions = useMemo(
+        () =>
+            Array.from(
+                new Set(
+                    allResources
+                        .map((item) => item.band)
+                        .filter((band): band is string => Boolean(band))
+                )
+            ).sort((left, right) => left.localeCompare(right)),
+        [allResources]
+    );
+
+    const subBandList = useMemo(
+        () =>
+            selectedBand
+                ? Array.from(
+                    new Set(
+                        allResources
+                            .filter((item) => item.band === selectedBand)
+                            .map((item) => item.subBand)
+                            .filter((subBand): subBand is string => Boolean(subBand))
+                    )
+                ).sort((left, right) => left.localeCompare(right))
+                : [],
+        [allResources, selectedBand]
+    );
+
+    useEffect(() => {
+
+        const loadProjectOptions = async () => {
+            try {
+                const resources = await getResources();
+                setAllResources(resources);
+            } catch (loadError) {
+                console.error("Failed to load project metadata", loadError);
+            }
+        };
+
+        if (isOpen) {
+            void loadProjectOptions();
+        }
+
+    }, [isOpen]);
+
     useEffect(() => {
 
         if (resource) {
@@ -78,7 +136,15 @@ function ResourceFormModal({
                     : null,
             });
 
+            setSelectedBand(resource.band || "");
+
         } else {
+
+            const matchedProject =
+                allResources.find(
+                    (projectResource) =>
+                        projectResource.projectCode === defaultProject?.projectCode
+                );
 
             setFormData({
                 ...emptyResource,
@@ -86,7 +152,21 @@ function ResourceFormModal({
                     defaultProject?.projectCode ?? "",
                 projectName:
                     defaultProject?.projectName ?? "",
+                customerCode:
+                    defaultProject?.customerCode ?? matchedProject?.customerCode ?? "",
+                customerName:
+                    defaultProject?.customerName ?? matchedProject?.customerName ?? "",
+                projectDUName:
+                    defaultProject?.projectDUName ?? matchedProject?.projectDUName ?? "",
+                projectManagerName:
+                    defaultProject?.projectManagerName ?? matchedProject?.projectManagerName ?? "",
+                projectCategory:
+                    defaultProject?.projectCategory ?? matchedProject?.projectCategory ?? "",
+                projectCategoryName:
+                    defaultProject?.projectCategoryName ?? matchedProject?.projectCategoryName ?? "",
             });
+
+            setSelectedBand("");
 
         }
 
@@ -96,6 +176,7 @@ function ResourceFormModal({
         resource,
         defaultProject,
         isOpen,
+        allResources,
     ]);
 
     if (!isOpen) {
@@ -113,6 +194,15 @@ function ResourceFormModal({
                 [field]: value,
             })
         );
+
+        if (field === "band") {
+            setSelectedBand(value);
+            setFormData((previous) => ({
+                ...previous,
+                band: value,
+                subBand: "",
+            }));
+        }
     };
 
     const handleNumberChange = (
@@ -303,11 +393,12 @@ function ResourceFormModal({
                                 }
                             />
 
-                            <FormInput
+                            <FormSelect
                                 label="Band"
                                 value={
                                     formData.band
                                 }
+                                options={bandOptions}
                                 onChange={(value) =>
                                     handleChange(
                                         "band",
@@ -316,11 +407,18 @@ function ResourceFormModal({
                                 }
                             />
 
-                            <FormInput
+                            <FormSelect
                                 label="SubBand"
                                 value={
                                     formData.subBand
                                 }
+                                options={subBandList}
+                                placeholder={
+                                    selectedBand
+                                        ? "Select sub band"
+                                        : "Select band first"
+                                }
+                                disabled={!selectedBand}
                                 onChange={(value) =>
                                     handleChange(
                                         "subBand",
@@ -598,6 +696,16 @@ interface FormInputProps {
     onChange: (value: string) => void;
 }
 
+interface FormSelectProps {
+    label: string;
+    value: string;
+    options: string[];
+    required?: boolean;
+    disabled?: boolean;
+    placeholder?: string;
+    onChange: (value: string) => void;
+}
+
 function FormInput({
     label,
     value,
@@ -633,6 +741,59 @@ function FormInput({
                     )
                 }
             />
+
+        </div>
+    );
+}
+
+function FormSelect({
+    label,
+    value,
+    options,
+    required = false,
+    disabled = false,
+    placeholder,
+    onChange,
+}: FormSelectProps) {
+
+    return (
+        <div className="form-field">
+
+            <label>
+
+                {label}
+
+                {required && (
+                    <span className="required">
+                        *
+                    </span>
+                )}
+
+            </label>
+
+            <select
+                value={value}
+                required={required}
+                disabled={disabled}
+                onChange={(event) =>
+                    onChange(
+                        event.target.value
+                    )
+                }
+            >
+                <option value="">
+                    {placeholder ?? "Select an option"}
+                </option>
+
+                {options.map((option) => (
+                    <option
+                        key={option}
+                        value={option}
+                    >
+                        {option}
+                    </option>
+                ))}
+            </select>
 
         </div>
     );
