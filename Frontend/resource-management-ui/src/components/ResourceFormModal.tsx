@@ -534,11 +534,18 @@ function ResourceFormModal({
                                 }
                             />
 
-                            <FormInput
+                            <FormSelect
                                 label="WBS Type"
                                 value={
                                     formData.wbsType
                                 }
+                                options={[
+                                    "Onshore",
+                                    "OffShore",
+                                    "OnSite",
+                                    "NearShore",
+                                    "Domestic",
+                                ]}
                                 onChange={(value) =>
                                     handleChange(
                                         "wbsType",
@@ -547,11 +554,12 @@ function ResourceFormModal({
                                 }
                             />
 
-                            <FormInput
+                            <FormSelect
                                 label="BillingStatus"
                                 value={
                                     formData.billingStatus
                                 }
+                                options={["N", "B", "C"]}
                                 onChange={(value) =>
                                     handleChange(
                                         "billingStatus",

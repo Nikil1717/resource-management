@@ -1,5 +1,6 @@
 import {
     useEffect,
+    useMemo,
     useState,
 } from "react";
 
@@ -162,10 +163,86 @@ function Dashboard() {
 
 
     /*
-     * RECENT RESOURCES
+     * CUSTOMER SUMMARY
      */
-    const recentResources =
-        resources.slice(0, 8);
+    const customerSummaries =
+        useMemo(() => {
+            const customerMap =
+                new Map<
+                    string,
+                    {
+                        customerCode: string;
+                        customerName: string;
+                        projectSet: Set<string>;
+                        resourceCount: number;
+                    }
+                >();
+
+            resources.forEach(
+                (resource) => {
+                    const customerCode =
+                        (
+                            resource.customerCode ??
+                            "-"
+                        ).trim() || "-";
+
+                    const customerName =
+                        (
+                            resource.customerName ??
+                            "Unknown Customer"
+                        ).trim() || "Unknown Customer";
+
+                    const key =
+                        `${customerCode}|${customerName}`;
+
+                    const existing =
+                        customerMap.get(key);
+
+                    if (existing) {
+                        existing.resourceCount += 1;
+
+                        if (resource.projectCode) {
+                            existing.projectSet.add(
+                                resource.projectCode.trim()
+                            );
+                        }
+
+                        return;
+                    }
+
+                    customerMap.set(key, {
+                        customerCode,
+                        customerName,
+                        projectSet: new Set(
+                            resource.projectCode
+                                ? [resource.projectCode.trim()]
+                                : []
+                        ),
+                        resourceCount: 1,
+                    });
+                }
+            );
+
+            return Array.from(
+                customerMap.values()
+            )
+                .map((customer) => ({
+                    customerCode: customer.customerCode,
+                    customerName: customer.customerName,
+                    totalProjects:
+                        customer.projectSet.size,
+                    totalResources:
+                        customer.resourceCount,
+                }))
+                .sort(
+                    (left, right) =>
+                        right.totalResources -
+                        left.totalResources ||
+                        left.customerName.localeCompare(
+                            right.customerName
+                        )
+                );
+        }, [resources]);
 
 
     return (
@@ -239,7 +316,7 @@ function Dashboard() {
 
 
             {/* =========================
-                RECENT RESOURCES
+                CUSTOMER DETAILS
                ========================= */}
 
             <div className="dashboard-grid">
@@ -251,11 +328,11 @@ function Dashboard() {
                         <div>
 
                             <h2>
-                                Recent Resources
+                                Customer Details
                             </h2>
 
                             <p>
-                                Latest resource records
+                                Customers with total projects and resources
                             </p>
 
                         </div>
@@ -272,23 +349,19 @@ function Dashboard() {
                                 <tr>
 
                                     <th>
-                                        Employee Code
+                                        Customer Code
                                     </th>
 
                                     <th>
-                                        Employee Name
+                                        Customer Name
                                     </th>
 
                                     <th>
-                                        Project Code
+                                        Total Projects
                                     </th>
 
                                     <th>
-                                        Project Name
-                                    </th>
-
-                                    <th>
-                                        Allocation
+                                        Total Resources
                                     </th>
 
                                 </tr>
@@ -298,17 +371,15 @@ function Dashboard() {
 
                             <tbody>
 
-                                {/* LOADING */}
-
                                 {loading && (
 
                                     <tr>
 
                                         <td
-                                            colSpan={5}
+                                            colSpan={4}
                                             className="empty-state"
                                         >
-                                            Loading resource data...
+                                            Loading customer data...
                                         </td>
 
                                     </tr>
@@ -316,56 +387,33 @@ function Dashboard() {
                                 )}
 
 
-                                {/* DATA */}
-
                                 {!loading &&
-                                    recentResources.map(
-                                        (resource) => (
+                                    customerSummaries.map(
+                                        (customer) => (
 
                                             <tr
                                                 key={
-                                                    resource.id ??
-                                                    `${resource.employeeCode}-${resource.projectCode}-${resource.employeeName}`
+                                                    `${customer.customerCode}-${customer.customerName}`
                                                 }
                                             >
 
                                                 <td>
-                                                    {
-                                                        resource.employeeCode ||
-                                                        "-"
-                                                    }
+                                                    {customer.customerCode || "-"}
                                                 </td>
 
 
                                                 <td className="font-medium">
-                                                    {
-                                                        resource.employeeName ||
-                                                        "-"
-                                                    }
+                                                    {customer.customerName || "-"}
                                                 </td>
 
 
                                                 <td>
-                                                    {
-                                                        resource.projectCode ||
-                                                        "-"
-                                                    }
+                                                    {customer.totalProjects}
                                                 </td>
 
 
                                                 <td>
-                                                    {
-                                                        resource.projectName ||
-                                                        "-"
-                                                    }
-                                                </td>
-
-
-                                                <td>
-                                                    {
-                                                        resource.allocation ??
-                                                        "-"
-                                                    }
+                                                    {customer.totalResources}
                                                 </td>
 
                                             </tr>
@@ -374,19 +422,17 @@ function Dashboard() {
                                     )}
 
 
-                                {/* NO DATA */}
-
                                 {!loading &&
                                     !error &&
-                                    resources.length === 0 && (
+                                    customerSummaries.length === 0 && (
 
                                         <tr>
 
                                             <td
-                                                colSpan={5}
+                                                colSpan={4}
                                                 className="empty-state"
                                             >
-                                                No resource records found.
+                                                No customer records found.
                                             </td>
 
                                         </tr>
